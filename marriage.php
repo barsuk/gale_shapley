@@ -48,13 +48,3 @@ while (!empty($free_men)) {
 }
 
 print_r($engagement);
-
-function isWomanEngaged($w_name, array $e): array
-{
-    foreach ($e as $key => $couple) {
-        if (in_array($w_name, $couple))
-            return ['key' => $key, 'couple' => $couple];
-    }
-    return [];
-}
-
