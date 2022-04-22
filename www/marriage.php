@@ -30,17 +30,17 @@ class Woman extends DBClient {
         return sprintf("Woman #%s, name %s\n", $this->id, $this->name);
     }
 
-    public function isFree() {
+    public function isFree(): bool {
         $sth = $this->pdo->query(
-            "SELECT max(are_engaged) as are_engaged FROM priority WHERE woman_id = $this->id"
+            "SELECT woman_id FROM engage WHERE woman_id = $this->id"
         );
         $row = $sth->fetch(PDO::FETCH_ASSOC);
 
-        if (count($row) < 1) {
-            throw new Exception("bad is free\n");
+        if ($row === false) {
+            return true;
         }
 
-        return $row['are_engaged'] === '1' ? 0 : 1;
+        return false;
     }
 
     public function prefersHusbandTo(FreeMan $m): bool {
@@ -70,9 +70,11 @@ class FreeMan extends DBClient {
 
     // returns the best non-proposed woman
     public function getHighestRankedWoman() {
-        $sth = $this->pdo->query("SELECT woman.id, woman.name, priority.man_id AS husband FROM woman 
+        $sth = $this->pdo->query("SELECT woman.id, woman.name FROM woman 
         JOIN priority ON priority.woman_id = woman.id AND priority.man_id = $this->id AND priority.weight =  
-                    (SELECT max(weight) FROM priority WHERE man_id = $this->id and is_proposed = 0)"
+                    (SELECT max(weight) FROM priority WHERE man_id = $this->id AND woman_id NOT IN 
+                        (SELECT woman_id FROM proposal WHERE man_id = $this->id)
+                        )"
         );
 
         $woman = $sth->fetchObject("Woman");
@@ -81,15 +83,16 @@ class FreeMan extends DBClient {
             throw new Exception("no woman found\n");
         }
 
-        $this->pdo->exec("UPDATE priority SET is_proposed = 1 WHERE woman_id = $woman->id AND man_id = $this->id");
+        $sthusb = $this->pdo->query("SELECT man_id FROM engage WHERE woman_id = $woman->id");
+        $woman->husband = $sthusb->fetchColumn();
+
+        $this->pdo->exec("INSERT INTO proposal(woman_id, man_id) VALUES($woman->id, $this->id)");
 
         return $woman;
     }
 
     public function engageWith(Woman $w) {
-        $this->pdo->exec(
-            "UPDATE priority SET are_engaged = 1 WHERE woman_id = $w->id AND man_id = $this->id"
-        );
+        $this->pdo->exec("INSERT INTO engage(woman_id, man_id) VALUES($w->id, $this->id)");
 
         return $this;
     }
@@ -97,16 +100,12 @@ class FreeMan extends DBClient {
     public function replaceExOf(Woman $w) {
         $sth = $this->pdo->query(
             "SELECT * from man WHERE id = 
-                (SELECT man_id FROM priority WHERE are_engaged = 1 AND woman_id = $w->id)"
+                (SELECT man_id FROM engage WHERE woman_id = $w->id)"
             );
         $ex = $sth->fetchObject("FreeMan");
 
-        $this->pdo->exec(
-            "UPDATE priority SET are_engaged = 0 WHERE woman_id = $w->id AND man_id = $ex->id"
-        );
-        $this->pdo->exec(
-            "UPDATE priority SET are_engaged = 1 WHERE woman_id = $w->id AND man_id = $this->id"
-        );
+        $this->pdo->exec("DELETE engage WHERE woman_id = $w->id AND man_id = $ex->id");
+        $this->pdo->exec("INSERT INTO engage(woman_id, man_id) VALUES($w->id, $this->id)");
 
         return $ex;
     }
@@ -125,8 +124,7 @@ while(!empty($free_men)) {
 
     $highestWoman = $man->getHighestRankedWoman();
 
-    $is_she_free = $highestWoman->isFree();
-    if ($is_she_free === 1) {
+    if ($highestWoman->isFree()) {
         $man->engageWith($highestWoman);
         continue;
     }
@@ -139,10 +137,9 @@ while(!empty($free_men)) {
 }
 
 $engaged = $db->getPDO()->query(
-    'SELECT man.name AS husband, woman.name AS wife FROM priority
-    JOIN man ON man.id = priority.man_id
-    JOIN woman ON woman.id = priority.woman_id
-    WHERE are_engaged = 1'
+    'SELECT man.name AS husband, woman.name AS wife FROM engage
+    JOIN man ON man.id = engage.man_id
+    JOIN woman ON woman.id = engage.woman_id'
     );
 
 while($couple = $engaged->fetch(PDO::FETCH_ASSOC)) {

@@ -1,0 +1,16 @@
+INSERT into priority (man_id, woman_id, weight) values(1,1,1);
+INSERT into priority (man_id, woman_id, weight) values(1,2,2);
+INSERT into priority (man_id, woman_id, weight) values(1,3,3);
+INSERT into priority (man_id, woman_id, weight) values(1,4,4);
+INSERT into priority (man_id, woman_id, weight) values(2,1,1);
+INSERT into priority (man_id, woman_id, weight) values(2,2,3);
+INSERT into priority (man_id, woman_id, weight) values(2,3,2);
+INSERT into priority (man_id, woman_id, weight) values(2,4,4);
+INSERT into priority (man_id, woman_id, weight) values(3,1,4);
+INSERT into priority (man_id, woman_id, weight) values(3,2,3);
+INSERT into priority (man_id, woman_id, weight) values(3,3,2);
+INSERT into priority (man_id, woman_id, weight) values(3,4,1);
+INSERT into priority (man_id, woman_id, weight) values(4,1,1);
+INSERT into priority (man_id, woman_id, weight) values(4,2,2);
+INSERT into priority (man_id, woman_id, weight) values(4,3,4);
+INSERT into priority (man_id, woman_id, weight) values(4,4,3);
