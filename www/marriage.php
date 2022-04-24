@@ -1,19 +1,21 @@
 <?php
 
+$db_path = './human.sqlite';
+if (!file_exists($db_path)) 
+    die(sprintf('there is no file at %s', $db_path));
+
+$GLOBALS['pdo'] = new PDO(
+    "sqlite:$db_path",
+    null,
+    null,
+    [PDO::ATTR_PERSISTENT => true]
+);
+
 class DBClient {
     protected object $pdo;
 
     public function __construct() {
-        $db_path = './human.sqlite';
-        if (!file_exists($db_path)) 
-            die(sprintf('there is no file at %s', $db_path));
-
-        $this->pdo = new PDO(
-            "sqlite:$db_path",
-            null,
-            null,
-            [PDO::ATTR_PERSISTENT => true]
-        );
+        $this->pdo = $GLOBALS['pdo'];
     }
 
     public function getPDO() {
