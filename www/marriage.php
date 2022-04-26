@@ -1,4 +1,7 @@
 <?php
+// Gale-Shapley Stable Matching Algorithm
+// From Kleinberg and Tardoc
+// First version of mine: naive, brute force of brain
 
 $db_path = './human.sqlite';
 if (!file_exists($db_path)) 
